@@ -1,14 +1,19 @@
+from datetime import timedelta
 from datetime import datetime
 from os import environ
-from os.path import expanduser
 import json
+import time
 
 import flickrapi
 
-home = expanduser("~")
+DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 flickr_key = environ['FLICKR_API_KEY']
 flickr_secret = environ['FLICKR_SECRET']
+joined_flickr = environ.get('FLICKR_JOINED_DATE', None)
+
+if joined_flickr is not None:
+    joined_flickr = datetime.strptime(joined_flickr, DATE_FORMAT)
 
 def main():
 
@@ -34,17 +39,35 @@ def main():
         photos = res['photos']['photo']
         all_photos.extend(photos)
 
+    # Handle photos before Flickr joined date
+    if joined_flickr is not None:
+        def datetaken(photo):
+            return datetime.strptime(photo['datetaken'], DATE_FORMAT)
+        photos_before_joined = []
+        photos_after_joined = []
+        for p in all_photos:
+            if datetaken(p) <= joined_flickr:
+                photos_before_joined.append(p)
+            else:
+                photos_after_joined.append(p)
+        photos_before_joined = sorted(photos_before_joined, key=datetaken)
+        for i, p in enumerate(photos_before_joined):
+            p['datetaken'] = (joined_flickr + timedelta(0,i)).strftime(DATE_FORMAT)
+        all_photos = photos_before_joined + photos_after_joined
+
     print '-----> Updating dates'
 
     for photo in  all_photos:
         date_taken = photo['datetaken']
-        date_taken = datetime.strptime(date_taken, '%Y-%m-%d %H:%M:%S')
+        date_taken = datetime.strptime(date_taken, DATE_FORMAT)
         date_posted = int(photo['dateupload'])
         date_posted = datetime.fromtimestamp(date_posted)
         if date_posted != date_taken:
             print '       Updating "{}": change date posted from {} to {}'.format(photo['id'], date_posted, date_taken)
-            new_date_posted = datetime.strftime(date_taken, '%s')
-            flickr.photos_setDates(photo_id=photo['id'], date_posted=new_date_posted)
+            new_date_posted = time.mktime(date_taken.timetuple())
+            res = flickr.photos_setDates(photo_id=photo['id'], date_posted=new_date_posted)
+            if "fail" in res:
+                print res
         else:
             print '       Skipping "{}": dates match'.format(photo['id'])
 
