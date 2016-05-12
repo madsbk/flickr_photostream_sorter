@@ -33,7 +33,7 @@ Then set them as environment variables by running the following commands
 Flickr Joined Date
 ------------------
 
-Date posted cannot be prior to the date you joined Flickr. To handle this, you can set ``FLICKR_JOINED_DATE``. Photos taken before ``FLICKR_JOINED_DATE`` will be given a *date posted* that a seconds after ``FLICKR_JOINED_DATE`` in such a way that those photos gets sorted correctly::
+Date posted cannot be prior to the date you joined Flickr. To handle this, you can set ``FLICKR_JOINED_DATE``. Photos taken before ``FLICKR_JOINED_DATE`` will be given a *date posted* that are seconds after ``FLICKR_JOINED_DATE`` in such a way that those photos gets sorted correctly::
 
   echo "export FLICKR_JOINED_DATE=\"2016-05-10 01:01:01\"" >> $HOME/.bash_profile
   source $HOME/.bash_profile
